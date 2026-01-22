@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – MailFlow</title>
+    <style>
+        :root {
+            --bg-dark: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --text-primary: #f8f8ff;
+            --text-secondary: #a0a0b0;
+            --accent-blue: #4f6df5;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --border-color: #2a2a40;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .btn-logout {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Monitoring Toggle */
+        .monitor-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .monitor-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .monitor-email {
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toggle-status {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .toggle-status.active {
+            color: var(--accent-green);
+        }
+
+        .toggle {
+            position: relative;
+            width: 56px;
+            height: 28px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3a3a50;
+            transition: 0.3s;
+            border-radius: 28px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        .toggle input:checked + .toggle-slider {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+        }
+
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(28px);
+        }
+
+        /* Emails Section */
+        .emails-section {
+            display: none;
+        }
+
+        .emails-section.visible {
+            display: block;
+        }
+
+        .email-list {
+            list-style: none;
+        }
+
+        .email-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .email-item:last-child {
+            border-bottom: none;
+        }
+
+        .email-item:hover {
+            background: rgba(79, 109, 245, 0.1);
+        }
+
+        .email-from {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .email-subject {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .email-preview {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .alert.success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">MailFlow</div>
+            <div class="user-info">
+                <span class="user-email" id="userEmail">Loading...</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="alert error" id="alertError"></div>
+        <div class="alert success" id="alertSuccess"></div>
+
+        <!-- Monitoring Card -->
+        <div class="card monitor-card">
+            <div class="monitor-info">
+                <h3>Gmail Monitoring</h3>
+                <span class="monitor-email" id="monitorEmail">-</span>
+            </div>
+            <div class="toggle-wrapper">
+                <span class="toggle-status" id="toggleStatus">Off</span>
+                <label class="toggle">
+                    <input type="checkbox" id="monitorToggle" onchange="toggleMonitoring()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Emails Section -->
+        <div class="emails-section" id="emailsSection">
+            <div class="card">
+                <h3 class="card-title">📬 Monitored Emails</h3>
+                <div class="loading" id="emailsLoading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">Loading emails...</p>
+                </div>
+                <ul class="email-list" id="emailList"></ul>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <p>No emails yet. Turn on monitoring to start capturing emails.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Token management
+        let accessToken = null;
+        let refreshToken = null;
+        let userId = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get tokens from URL or localStorage
+            const params = new URLSearchParams(window.location.search);
+            
+            if (params.get('access_token')) {
+                accessToken = params.get('access_token');
+                refreshToken = params.get('refresh_token');
+                userId = params.get('user_id');
+                
+                // Store in localStorage
+                localStorage.setItem('access_token', accessToken);
+                localStorage.setItem('refresh_token', refreshToken);
+                localStorage.setItem('user_id', userId);
+                
+                // Clean URL
+                window.history.replaceState({}, document.title, '/dashboard');
+            } else {
+                accessToken = localStorage.getItem('access_token');
+                refreshToken = localStorage.getItem('refresh_token');
+                userId = localStorage.getItem('user_id');
+            }
+
+            if (!accessToken) {
+                window.location.href = '/';
+                return;
+            }
+
+            loadUserInfo();
+        });
+
+        // API helper
+        async function api(endpoint, options = {}) {
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                // Try refresh token
+                const refreshed = await refreshAccessToken();
+                if (refreshed) {
+                    return api(endpoint, options);
+                } else {
+                    logout();
+                    return null;
+                }
+            }
+
+            return response;
+        }
+
+        async function refreshAccessToken() {
+            try {
+                const response = await fetch('/auth/refresh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+                    localStorage.setItem('access_token', accessToken);
+                    localStorage.setItem('refresh_token', refreshToken);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Refresh failed:', e);
+            }
+            return false;
+        }
+
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const response = await api('/me');
+                if (!response) return;
+
+                const user = await response.json();
+                document.getElementById('userEmail').textContent = user.email_id;
+                document.getElementById('monitorEmail').textContent = user.email_id;
+                
+                // Set toggle state
+                const toggle = document.getElementById('monitorToggle');
+                toggle.checked = user.monitoring_status;
+                updateToggleUI(user.monitoring_status);
+
+                if (user.monitoring_status) {
+                    loadEmails();
+                }
+            } catch (e) {
+                showError('Failed to load user info');
+                console.error(e);
+            }
+        }
+
+        // Toggle monitoring
+        async function toggleMonitoring() {
+            const toggle = document.getElementById('monitorToggle');
+            const enabled = toggle.checked;
+
+            try {
+                const endpoint = enabled ? '/watch/start' : '/watch/stop';
+                const response = await api(endpoint, { method: 'POST' });
+
+                if (!response || !response.ok) {
+                    toggle.checked = !enabled;
+                    const error = await response?.json();
+                    showError(error?.detail || 'Failed to toggle monitoring');
+                    return;
+                }
+
+                updateToggleUI(enabled);
+                showSuccess(enabled ? 'Monitoring started!' : 'Monitoring stopped');
+
+                if (enabled) {
+                    loadEmails();
+                }
+            } catch (e) {
+                toggle.checked = !enabled;
+                showError('Failed to toggle monitoring');
+                console.error(e);
+            }
+        }
+
+        function updateToggleUI(enabled) {
+            const status = document.getElementById('toggleStatus');
+            const emailsSection = document.getElementById('emailsSection');
+
+            status.textContent = enabled ? 'Active' : 'Off';
+            status.classList.toggle('active', enabled);
+            emailsSection.classList.toggle('visible', enabled);
+        }
+
+        // Load emails
+        async function loadEmails() {
+            const loading = document.getElementById('emailsLoading');
+            const list = document.getElementById('emailList');
+            const empty = document.getElementById('emptyState');
+
+            loading.style.display = 'block';
+            list.innerHTML = '';
+            empty.style.display = 'none';
+
+            try {
+                const response = await api('/emails?limit=20');
+                if (!response) return;
+
+                const emails = await response.json();
+                loading.style.display = 'none';
+
+                if (emails.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                emails.forEach(email => {
+                    const li = document.createElement('li');
+                    li.className = 'email-item';
+                    li.innerHTML = `
+                        <div class="email-from">${escapeHtml(email.from || 'Unknown')}</div>
+                        <div class="email-subject">${escapeHtml(email.subject || '(No subject)')}</div>
+                        <div class="email-preview">${escapeHtml((email.body || '').substring(0, 150))}</div>
+                    `;
+                    list.appendChild(li);
+                });
+            } catch (e) {
+                loading.style.display = 'none';
+                showError('Failed to load emails');
+                console.error(e);
+            }
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(message) {
+            const alert = document.getElementById('alertError');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => { alert.style.display = 'none'; }, 5000);
+        }
+
+        function showSuccess(message) {
+            const alert = document.getElementById('alertSuccess');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => { alert.style.display = 'none'; }, 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_id');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
